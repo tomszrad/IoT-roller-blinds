@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rolety</title>
+
+    <link rel="manifest" href="/manifest.json">
+
+    <style>
+        *{
+            overflow: hidden;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            background-color: #7dab91;
+        }
+        
+input:disabled {
+  cursor: not-allowed; /* Zmienia kursor na "nie dozwolony" */
+  opacity: 0.5; /* Zmniejsza przezroczystość */
+}
+    
+.vertical-slider::-webkit-slider-thumb {
+   -webkit-appearance: none; /* Override default look */
+   appearance: none;
+   margin-top: -2vw; /* Centers thumb on the track */
+   background-color: #3f5037;
+   height: 32vw;
+   width: 2vh;    
+   box-shadow: -407px 0 0 400px #618f46;
+   cursor: pointer;
+*/
+}
+
+    .vertical-slider::-webkit-slider-runnable-track {
+        background: rgb(240, 253, 255);
+  height: 28vw;
+    }
+
+
+/*
+    .vertical-slider::-moz-range-track {
+        background: #053a5f;
+  height: 0.5rem;
+    }
+*/
+
+
+
+        .vertical-slider {
+            writing-mode: bt-lr; /* for vertical slider */
+            -webkit-appearance: none;
+            background: transparent;
+            cursor: pointer;
+            width: 60vh;
+            height: 70vh;
+            transform: rotate(90deg); /* Rotate the slider 180 degrees */
+
+            */
+        }
+
+        .sliders-row {
+            display: flex;
+            align-items: center;
+            
+        }
+
+        .slider-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            
+        }
+
+        #slider4 {
+            margin-top: 3vh;
+            width: 90%;
+            /* Kolor paska suwaka */
+            -webkit-appearance: none; /* Ukrywa domyślne style w przeglądarkach WebKit */
+            background: rgb(240, 253, 255); /* Zielony kolor tła suwaka */
+            height: 2vh; /* Wysokość paska suwaka */
+            border-radius: 5px; /* Zaokrąglenie krawędzi paska suwaka */
+        }
+
+        #slider4::-webkit-slider-thumb {
+            box-shadow: -900px 0 0 890px #618f46;
+            -webkit-appearance: none; /* Ukrywa domyślne style w przeglądarkach WebKit */
+            background: #3f5037;; /* Ciemniejszy zielony kolor dla suwaka */
+            width: 20px; /* Szerokość uchwytu suwaka */
+            height: 20vh; /* Wysokość uchwytu suwaka */
+            cursor: pointer; /* Kursor zmienia się na wskaźnik podczas przesuwania */
+        }
+
+#ustawButton{
+ width: 50%;
+ height: 6vh;
+ background-color: rgb(240, 253, 255);
+ font-size: larger;
+ border: 2px solid #3f5037;
+}
+
+.buttonContainer {
+            display: flex;
+            justify-content: center; /* Wyśrodkowanie w poziomie */
+            margin-top: 3vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="sliders-row">
+        <div class="slider-container">
+            <input type="range" id="slider1" class="vertical-slider" min="0" max="100" oninput="updateValue(1)">
+            <label for="slider1"><span id="value1">50</span></label>
+        </div>
+        <div class="slider-container">
+            <input type="range" id="slider2" class="vertical-slider" min="0" max="100" oninput="updateValue(2)">
+            <label for="slider2"><span id="value2">50</span></label>
+        </div>
+        <div class="slider-container">
+            <input type="range" id="slider3" class="vertical-slider" min="0" max="100" oninput="updateValue(3)">
+            <label for="slider3"><span id="value3">50</span></label>
+        </div>
+    </div>
+    <div class="sliders-row">
+        <div class="slider-container">
+            <input type="range" id="slider4" min="0" max="100" value="50" oninput="updateAllSliders()">
+        </div>
+    </div>
+    <div class="buttonContainer">
+        <button id="ustawButton" onclick="submitSliders()">ustaw</button>
+    </div>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+    <script>
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => {
+        console.log('ServiceWorker registered with scope:', registration.scope);
+      })
+      .catch(error => {
+        console.error('ServiceWorker registration failed:', error);
+      });
+  });
+}
+
+
+const apiKey = '_API_AUTHORIZATION_KEY'; 
+        // Function to fetch initial values from API
+        var wspolrzedna1, wspolrzedna2, wspolrzedna3;
+
+        async function fetchInitialValues() {
+            try {
+
+
+            const response = await fetch('/api/wspolrzedne', {
+                method: 'GET',
+                headers: {
+                    'x-api-key': apiKey // Dodaj klucz API do nagłówka
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+const data = await response.json();
+
+                // Update slider values based on API response
+                wspolrzedna1 = data.roleta1.wspolrzedna;
+                wspolrzedna2 = data.roleta2.wspolrzedna;
+                wspolrzedna3 = data.roleta3.wspolrzedna;
+
+                document.getElementById('slider1').value = wspolrzedna1;
+                document.getElementById('slider2').value = wspolrzedna2;
+                document.getElementById('slider3').value = wspolrzedna3;
+
+                // Update displayed values
+                updateValue(1);
+                updateValue(2);
+                updateValue(3);
+
+                // Disable sliders and button if czysierusza is true
+                const disabled = data.czysierusza === true;
+                document.getElementById('slider1').disabled = disabled;
+                document.getElementById('slider2').disabled = disabled;
+                document.getElementById('slider3').disabled = disabled;
+                document.getElementById('slider4').disabled = disabled;
+                document.getElementById('ustawButton').disabled = disabled;
+            } catch (error) {
+                console.error('Error fetching initial values:', error);
+            }
+        }
+
+        // Call fetchInitialValues when the page loads
+        window.addEventListener('load', fetchInitialValues);
+
+        // Function to update displayed values
+        function updateValue(sliderNumber) {
+            const slider = document.getElementById('slider' + sliderNumber);
+            const valueSpan = document.getElementById('value' + sliderNumber);
+            valueSpan.textContent = slider.value;
+        }
+
+        function updateAllSliders() {
+            const mainSliderValue = document.getElementById('slider4').value;
+            document.querySelectorAll('[id^="slider"]').forEach(slider => {
+                slider.value = mainSliderValue;
+            });
+
+            updateValue(1);
+            updateValue(2);
+            updateValue(3);
+        }
+        function submitSliders() {
+    document.querySelectorAll('[id^="slider"]').forEach(slider => {
+        slider.disabled = true;
+    });
+    document.getElementById('ustawButton').disabled = true;
+
+    const w1 = parseInt(document.getElementById('slider1').value);
+    const w2 = parseInt(document.getElementById('slider2').value);
+    const w3 = parseInt(document.getElementById('slider3').value);
+
+    const url = `/api/wspolrzedne?w1=${w1}&w2=${w2}&w3=${w3}`;
+
+    fetch(url, {
+        method: 'GET', // Metoda GET
+        headers: {
+            'x-api-key': apiKey // Dodaj klucz API do nagłówka
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Odpowiedź z serwera:', data);
+        // Dalsze przetwarzanie odpowiedzi serwera
+    })
+    .catch(error => {
+        console.error('Wystąpił błąd podczas wysyłania zapytania:', error);
+    });
+}
+
+
+
+        // MQTT client connection setup
+        const options = {
+            host: '_MQTT_SERVER_IP',
+            port: 8883,
+            protocol: 'wss',
+            username: '_MQTT_USERNAME',
+            password: '_MQTT_PASSWORD'
+        };
+
+        const client = mqtt.connect(options);
+
+        // MQTT event handlers
+        client.on('connect', () => {
+            console.log('Connected to MQTT server');
+            client.subscribe('reached', err => {
+                if (!err) {
+                    console.log('Subscribed to topic: reached');
+                }
+            });
+        });
+
+        client.on('message', (topic, message) => {
+            if (topic === 'reached') {
+                console.log('Received message:', message.toString());
+                fetchInitialValues();
+            }
+        });
+
+        client.on('error', error => {
+            console.error('Connection error:', error);
+        });
+    </script>
+</body>
+</html>
